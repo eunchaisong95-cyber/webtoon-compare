@@ -27,5 +27,5 @@ jobs:
     - name: Upload EXE Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: WebtoonComparator-Setup
+        name: WebtoonComparator-EXE
         path: dist/*.exe
