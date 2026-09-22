@@ -1,0 +1,26 @@
+{
+  "name": "webtoon-comparator",
+  "version": "1.0.0",
+  "description": "웹툰 콘티, 작화, 배경 이미지 비교 프로그램",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.webtoon.comparator",
+    "productName": "WebtoonComparator",
+    "win": {
+      "target": "nsis"
+    },
+    "files": [
+      "index.html",
+      "main.js",
+      "package.json"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1"
+  }
+}

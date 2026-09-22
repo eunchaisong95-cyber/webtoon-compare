@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>웹툰 이미지 비교 프로그램</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Pretendard', 'Malgun Gothic', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 컨트롤 바 */
+        #controls {
+            background-color: #1e1e1e;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            z-index: 100;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="number"] {
+            width: 60px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        input[type="range"] {
+            width: 140px;
+            accent-color: #4CAF50;
+            cursor: pointer;
+        }
+
+        .zoom-val {
+            display: inline-block;
+            width: 45px;
+            font-size: 13px;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        button {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 7px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background-color: #444;
+            border-color: #777;
+        }
+
+        button.btn-reset {
+            background-color: #8b0000;
+            border-color: #a00000;
+        }
+
+        button.btn-reset:hover {
+            background-color: #a00000;
+        }
+
+        /* 메인 작업 영역 */
+        #work-area {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* 슬롯 헤더 영역 */
+        #headers {
+            display: flex;
+            background-color: #181818;
+            border-bottom: 2px solid #333;
+            min-height: 80px;
+        }
+
+        .slot-header {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border-right: 1px solid #2a2a2a;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+            position: relative;
+            background-color: #1a1a1a;
+        }
+
+        .slot-header:last-child {
+            border-right: none;
+        }
+
+        .slot-header:hover {
+            background-color: #252525;
+        }
+
+        .slot-header.dragover {
+            background-color: #1b3a20;
+            border: 2px dashed #4CAF50;
+        }
+
+        .slot-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .slot-subtitle {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .slot-count-tag {
+            margin-top: 5px;
+            font-size: 11px;
+            background: #333;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: #4CAF50;
+        }
+
+        .btn-clear-slot {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: transparent;
+            border: none;
+            color: #777;
+            font-size: 14px;
+            padding: 2px 6px;
+        }
+
+        .btn-clear-slot:hover {
+            color: #ff5555;
+            background: transparent;
+        }
+
+        /* 메인 이미지 비교 스크롤 컨테이너 */
+        #scroll-container {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: auto;
+            background-color: #0d0d0d;
+        }
+
+        #content {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .row {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid #222;
+        }
+
+        .row:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .cell {
+            flex: 1;
+            border-right: 1px solid #222;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 10px;
+            min-height: 50px;
+            position: relative;
+        }
+
+        .cell:last-child {
+            border-right: none;
+        }
+
+        .cell img {
+            display: block;
+            height: auto;
+            max-width: 100%;
+            object-fit: contain;
+            border-radius: 2px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            transition: width 0.1s ease-out;
+        }
+
+        .cell .filename-label {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #666;
+            word-break: break-all;
+            text-align: center;
+        }
+
+        .empty-cell {
+            color: #333;
+            font-size: 12px;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        /* Custom Scrollbar */
+        #scroll-container::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        #scroll-container::-webkit-scrollbar-track {
+            background: #121212;
+        }
+        #scroll-container::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 5px;
+        }
+        #scroll-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="controls">
+        <div class="control-group">
+            <label>비교 슬롯 수:
+                <input type="number" id="slot-count" value="2" min="1" max="5">
+            </label>
+        </div>
+
+        <div class="control-group">
+            <label>이미지 크기 비율:
+                <input type="range" id="zoom" min="10" max="100" value="100">
+                <span class="zoom-val" id="zoom-text">100%</span>
+            </label>
+        </div>
+
+        <div class="control-group">
+            <button id="reset" class="btn-reset">전체 초기화</button>
+        </div>
+    </div>
+
+    <div id="work-area">
+        <div id="headers"></div>
+        <div id="scroll-container">
+            <div id="content"></div>
+        </div>
+    </div>
+
+    <script>
+        let slotCount = 2;
+        // 슬롯별 파일 데이터 저장 구조 [{ file, url, name }]
+        let slotsData = [[], []];
+
+        const headersContainer = document.getElementById('headers');
+        const contentContainer = document.getElementById('content');
+        const slotInput = document.getElementById('slot-count');
+        const zoomInput = document.getElementById('zoom');
+        const zoomText = document.getElementById('zoom-text');
+        const resetButton = document.getElementById('reset');
+
+        // 헤더 렌더링
+        function renderHeaders() {
+            headersContainer.innerHTML = '';
+            for (let i = 0; i < slotCount; i++) {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'slot-header';
+                
+                const fileCount = slotsData[i] ? slotsData[i].length : 0;
+                
+                headerDiv.innerHTML = `
+                    ${fileCount > 0 ? `<button class="btn-clear-slot" title="슬롯 비우기" onclick="event.stopPropagation(); clearSlot(${i})">✕</button>` : ''}
+                    <div class="slot-title">슬롯 ${i + 1}</div>
+                    <div class="slot-subtitle">클릭하여 파일 선택 또는 이미지를 드래그하세요</div>
+                    ${fileCount > 0 ? `<div class="slot-count-tag">${fileCount}개의 파일</div>` : ''}
+                `;
+
+                // 드래그 앤 드롭 이벤트
+                headerDiv.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    headerDiv.classList.add('dragover');
+                });
+
+                headerDiv.addEventListener('dragleave', () => {
+                    headerDiv.classList.remove('dragover');
+                });
+
+                headerDiv.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    headerDiv.classList.remove('dragover');
+                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        processFiles(e.dataTransfer.files, i);
+                    }
+                });
+
+                // 클릭 시 파일 열기
+                headerDiv.addEventListener('click', () => {
+                    triggerFileInput(i);
+                });
+
+                headersContainer.appendChild(headerDiv);
+            }
+        }
+
+        // 파일 선택창 호출
+        function triggerFileInput(slotIndex) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.multiple = true;
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                    processFiles(e.target.files, slotIndex);
+                }
+            };
+            input.click();
+        }
+
+        // 파일 처리 및 숫자 기준 오름차순 정렬
+        function processFiles(fileList, slotIndex) {
+            const fileArray = Array.from(fileList).filter(file => file.type.startsWith('image/'));
+
+            // 숫자 기준 오름차순 정렬 로직 (예: 콘티_001.jpg, 2.png, 010.jpg)
+            fileArray.sort((a, b) => {
+                const matchA = a.name.match(/\d+/g);
+                const matchB = b.name.match(/\d+/g);
+
+                const numA = matchA ? parseInt(matchA[matchA.length - 1], 10) : -1;
+                const numB = matchB ? parseInt(matchB[matchB.length - 1], 10) : -1;
+
+                if (numA !== numB) {
+                    return numA - numB;
+                }
+                return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+            });
+
+            // 이전 Blob URL 해제
+            if (slotsData[slotIndex]) {
+                slotsData[slotIndex].forEach(item => URL.revokeObjectURL(item.url));
+            }
+
+            slotsData[slotIndex] = fileArray.map(file => ({
+                file: file,
+                name: file.name,
+                url: URL.createObjectURL(file)
+            }));
+
+            renderHeaders();
+            renderContent();
+        }
+
+        // 단일 슬롯 비우기
+        window.clearSlot = function(slotIndex) {
+            if (slotsData[slotIndex]) {
+                slotsData[slotIndex].forEach(item => URL.revokeObjectURL(item.url));
+                slotsData[slotIndex] = [];
+            }
+            renderHeaders();
+            renderContent();
+        };
+
+        // 메인 이미지 비교 구역 렌더링
+        function renderContent() {
+            contentContainer.innerHTML = '';
+
+            // 가로 줄(Row) 수 결정 (슬롯 중 가장 파일 수가 많은 기준)
+            let maxRows = 0;
+            for (let i = 0; i < slotCount; i++) {
+                if (slotsData[i] && slotsData[i].length > maxRows) {
+                    maxRows = slotsData[i].length;
+                }
+            }
+
+            if (maxRows === 0) {
+                return;
+            }
+
+            const currentZoom = zoomInput.value;
+
+            for (let r = 0; r < maxRows; r++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+
+                for (let c = 0; c < slotCount; c++) {
+                    const cellDiv = document.createElement('div');
+                    cellDiv.className = 'cell';
+
+                    if (slotsData[c] && slotsData[c][r]) {
+                        const item = slotsData[c][r];
+
+                        const img = document.createElement('img');
+                        img.src = item.url;
+                        img.alt = item.name;
+                        img.style.width = currentZoom + '%';
+
+                        const label = document.createElement('div');
+                        label.className = 'filename-label';
+                        label.textContent = item.name;
+
+                        cellDiv.appendChild(img);
+                        cellDiv.appendChild(label);
+                    } else {
+                        const empty = document.createElement('div');
+                        empty.className = 'empty-cell';
+                        empty.textContent = '-';
+                        cellDiv.appendChild(empty);
+                    }
+
+                    rowDiv.appendChild(cellDiv);
+                }
+
+                contentContainer.appendChild(rowDiv);
+            }
+        }
+
+        // 이벤트 리스너 설정
+        slotInput.addEventListener('change', (e) => {
+            let val = parseInt(e.target.value, 10);
+            if (isNaN(val) || val < 1) val = 1;
+            if (val > 5) val = 5;
+            e.target.value = val;
+
+            while (slotsData.length < val) {
+                slotsData.push([]);
+            }
+            while (slotsData.length > val) {
+                const popped = slotsData.pop();
+                popped.forEach(item => URL.revokeObjectURL(item.url));
+            }
+
+            slotCount = val;
+            renderHeaders();
+            renderContent();
+        });
+
+        zoomInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            zoomText.textContent = val + '%';
+            
+            const images = document.querySelectorAll('.cell img');
+            images.forEach(img => {
+                img.style.width = val + '%';
+            });
+        });
+
+        resetButton.addEventListener('click', () => {
+            if (confirm('모든 슬롯의 이미지를 초기화하시겠습니까?')) {
+                slotsData.forEach(slot => {
+                    slot.forEach(item => URL.revokeObjectURL(item.url));
+                });
+                slotsData = Array.from({ length: slotCount }, () => []);
+                renderHeaders();
+                renderContent();
+            }
+        });
+
+        // 초기화
+        renderHeaders();
+    </script>
+</body>
+</html>
