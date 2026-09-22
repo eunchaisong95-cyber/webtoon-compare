@@ -1,23 +1,22 @@
 {
   "name": "webtoon-comparator",
   "version": "1.0.0",
-  "description": "웹툰 콘티, 작화, 배경 이미지 비교 프로그램",
+  "description": "Webtoon Comparator",
+  "author": "eunchaisong95-cyber",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build": "electron-builder --win portable"
   },
   "build": {
     "appId": "com.webtoon.comparator",
     "productName": "WebtoonComparator",
     "win": {
-      "target": "nsis"
+      "target": "portable"
     },
-    "files": [
-      "index.html",
-      "main.js",
-      "package.json"
-    ]
+    "directories": {
+      "output": "dist"
+    }
   },
   "devDependencies": {
     "electron": "^28.2.0",
